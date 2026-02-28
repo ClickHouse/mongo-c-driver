@@ -27,7 +27,7 @@
 #include <stdio.h>
 
 // See `bson_strerror_r()` definition below.
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__MUSL__) && !defined(__FreeBSD__)
 #include <locale.h> // uselocale()
 #endif
 
@@ -122,7 +122,11 @@ bson_strerror_r(int err_code,                    /* IN */
    // AIX does not provide strerror_l, and its strerror_r isn't glibc's.
    // But it does provide a glibc compatible one called __linux_strerror_r
    ret = __linux_strerror_r(err_code, buf, buflen);
-#elif defined(__APPLE__)
+#elif defined(_GNU_SOURCE) && !defined(__MUSL__)
+   // Unlikely, but continue supporting use of GNU extension in cases where the
+   // C Driver is being built without _XOPEN_SOURCE=700.
+   ret = strerror_r(err_code, buf, buflen);
+#elif defined(__APPLE__) || defined(__MUSL__) || defined(__FreeBSD__)
    // Apple does not provide `strerror_l`, but it does unconditionally provide
    // the XSI-compliant `strerror_r`, but only when compiling with Apple Clang.
    // GNU extensions may still be a problem if we are being compiled with GCC on
@@ -169,10 +173,6 @@ bson_strerror_r(int err_code,                    /* IN */
       // Could not obtain a valid `locale_t` object to satisfy `strerror_l`.
       // Fallback to `bson_strncpy` below.
    }
-#elif defined(_GNU_SOURCE)
-   // Unlikely, but continue supporting use of GNU extension in cases where the
-   // C Driver is being built without _XOPEN_SOURCE=700.
-   ret = strerror_r(err_code, buf, buflen);
 #else
 #error "Unable to find a supported strerror_r candidate"
 #endif
