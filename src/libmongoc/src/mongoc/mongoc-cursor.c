@@ -745,6 +745,11 @@ _retryable_cursor_commmand_select_retry_server(void *user_data,
 
    mongoc_cursor_t *const cursor = context->cursor;
 
+   /* `reply` still owns the previous attempt's contents, and stream_for_reads
+    * overwrites it as an out-param on server-selection failure without freeing
+    * it first. Reset it here so that allocation is not leaked. */
+   bson_destroy(reply);
+   bson_init(reply);
 
    *context->server_stream = mongoc_cluster_stream_for_reads(&cursor->client->cluster,
                                                              context->ss_log_context,
