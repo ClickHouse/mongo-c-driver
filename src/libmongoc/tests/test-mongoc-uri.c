@@ -2446,14 +2446,12 @@ test_mongoc_uri_tls_ssl(const char *tls,
       ASSERT_ERROR_CONTAINS(err,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Deprecated option 'ssl=true' conflicts with "
-                            "canonical name 'tls=false'");
+                            "Deprecated option 'ssl' conflicts with canonical name 'tls'");
    } else {
       ASSERT_ERROR_CONTAINS(err,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Deprecated option 'ssl=false' conflicts with "
-                            "canonical name 'tls=true'");
+                            "Deprecated option 'ssl' conflicts with canonical name 'tls'");
    }
    mongoc_uri_destroy(uri);
 
