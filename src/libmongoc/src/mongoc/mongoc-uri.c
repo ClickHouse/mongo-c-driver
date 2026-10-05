@@ -938,13 +938,7 @@ mongoc_uri_options_validate_names(const bson_t *a, const bson_t *b, bson_error_t
    return true;
 
 HANDLE_CONFLICT:
-   MONGOC_URI_ERROR(error,
-                    "Deprecated option '%s=%s' conflicts with "
-                    "canonical name '%s=%s'",
-                    key,
-                    value,
-                    canon,
-                    cval);
+   MONGOC_URI_ERROR(error, "Deprecated option '%s' conflicts with canonical name '%s'", key, canon);
 
    return false;
 }
