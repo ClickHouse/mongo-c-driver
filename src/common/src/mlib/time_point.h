@@ -32,7 +32,11 @@
 // Check for POSIX clock functions functions
 #undef mlib_have_posix_clocks
 #define mlib_have_posix_clocks() 0
-#if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 199309L) || (defined(_DEFAULT_SOURCE) && !defined(_WIN32))
+#if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 199309L) \
+    || (defined(_DEFAULT_SOURCE) && !defined(_WIN32)) \
+    || defined(__APPLE__) \
+    || defined(__FreeBSD__) \
+    || defined(__MUSL__)
 #include <sys/types.h>
 #undef mlib_have_posix_clocks
 #define mlib_have_posix_clocks() 1

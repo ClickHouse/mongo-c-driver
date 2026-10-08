@@ -825,6 +825,13 @@ _mongoc_handshake_build_doc_with_application(const mongoc_handshake_t *md, const
 void
 _mongoc_handshake_freeze(void)
 {
+   // Once frozen, gMongocHandshake is read-only and may be copied with plain reads (see
+   // `_mongoc_topology_scanner_append_metadata`), which would race with a redundant store from another thread.
+   // Check with a load rather than a compare-exchange, which ThreadSanitizer treats as a write even if it fails.
+   if (_mongoc_handshake_is_frozen()) {
+      return;
+   }
+
    // Ensure all writes to gMongocHandshake are ordered BEFORE this store.
    mcommon_atomic_int8_exchange(&gMongocHandshake.frozen, true, mcommon_memory_order_release);
 }
