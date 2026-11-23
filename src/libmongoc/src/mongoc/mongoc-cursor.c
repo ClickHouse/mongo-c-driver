@@ -767,6 +767,11 @@ _retryable_cursor_commmand_select_retry_server(void *user_data,
 
    mongoc_cursor_t *const cursor = context->cursor;
 
+   /* `reply` still owns the previous attempt's contents, and stream_for_reads
+    * overwrites it as an out-param on server-selection failure without freeing
+    * it first. Reset it here so that allocation is not leaked. */
+   bson_destroy(reply);
+   bson_init(reply);
 
    *context->server_stream = mongoc_cluster_stream_for_reads(&cursor->client->cluster,
                                                              context->ss_log_context,
@@ -1498,13 +1503,17 @@ _mongoc_cursor_response_read(mongoc_cursor_t *cursor, mongoc_cursor_response_t *
 
    ENTRY;
 
-   BSON_UNUSED(cursor);
-
    if (bson_iter_next(&response->batch_iter) && BSON_ITER_HOLDS_DOCUMENT(&response->batch_iter)) {
       bson_iter_document(&response->batch_iter, &data_len, &data);
 
-      /* bson_iter_next guarantees valid BSON, so this must succeed */
-      BSON_ASSERT(bson_init_static(&response->current_doc, data, data_len));
+      /* The batch iterator checks bounds but does not validate the embedded document. */
+      if (!bson_init_static(&response->current_doc, data, data_len)) {
+         _mongoc_set_error(&cursor->error,
+                           MONGOC_ERROR_PROTOCOL,
+                           MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                           "Invalid BSON document in cursor reply.");
+         return;
+      }
       *bson = &response->current_doc;
    }
 }
